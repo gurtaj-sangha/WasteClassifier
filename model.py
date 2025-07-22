@@ -9,7 +9,7 @@ lr = [0.1, 0.001, 0.0001]
 size = 32
 
 trainer = transforms.Compose([
-    transforms.Resize((224)),
+    transforms.RandomResizedCrop((224)),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
@@ -83,26 +83,26 @@ for l in lr:
         if valLoss < loss:
             loss = valLoss
             trigger = 0
-            torch.save(model.state_dict(), "modelbest.pth")
+            torch.save(model.state_dict(), f"model_{l}.pth")
         else:
             trigger += 1
             if trigger >= patience:
                 print("Early stopping")
                 break
-model.load_state_dict(torch.load("modelbest.pth"))
-model.eval()
-test_loss = 0.0
-right = 0
-total = 0
-with torch.no_grad():
-    for i, l in load3:
-        i, l = i.to(device), l.to(device)
-        outputs = model(i)
-        loss = criterion(outputs, l)
-        test_loss += loss.item()
-        _, predicted = torch.max(outputs.data, 1)
-        total += l.size(0)
-        right += (predicted == l).sum().item()
-test_loss /= len(load3)
-acc = right / total
-print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {acc:.4f}")
+    model.load_state_dict(torch.load(f"model_{l}.pth"))
+    model.eval()
+    test_loss = 0.0
+    right = 0
+    total = 0
+    with torch.no_grad():
+        for i, l in load3:
+            i, l = i.to(device), l.to(device)
+            outputs = model(i)
+            loss = criterion(outputs, l)
+            test_loss += loss.item()
+            _, predicted = torch.max(outputs.data, 1)
+            total += l.size(0)
+            right += (predicted == l).sum().item()
+    test_loss /= len(load3)
+    acc = right / total
+    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {acc:.4f}")
