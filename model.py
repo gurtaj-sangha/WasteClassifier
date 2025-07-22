@@ -41,13 +41,13 @@ load3 = DataLoader(test_dataset, batch_size=size)
 for l in lr:
     print(f"learning rate is {l}")
     epochs = 10
-    optimizer = optim.Adam(model.parameters(), lr=l)
     model = models.resnet50(pretrained=True)
     for p in model.parameters():
         p.requires_grad = False
     model.fc = nn.Linear(model.fc.in_features, 3)
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=l)
     patience = 5
     loss = float('inf')
     trigger = 0
@@ -83,13 +83,13 @@ for l in lr:
         if valLoss < loss:
             loss = valLoss
             trigger = 0
-            torch.save(model.state_dict(), f"model_{l}.pth")
+            torch.save(model.state_dict(), "modelbest.pth")
         else:
             trigger += 1
             if trigger >= patience:
                 print("Early stopping")
                 break
-model.load_state_dict(torch.load("model_0.001.pth"))
+model.load_state_dict(torch.load("modelbest.pth"))
 model.eval()
 test_loss = 0.0
 right = 0
