@@ -1,6 +1,7 @@
 import torch 
 import torch.nn as nn
 import torch.optim as optim
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms, models
 from torchvision.models import ResNet50_Weights
@@ -45,7 +46,7 @@ def main():
 
     for i, learning_rate in enumerate(lr):
         print(f"\nTraining model with learning rate: {learning_rate}")
-        epochs = 10
+        epochs = 20
 
         model = models.resnet50(weights=ResNet50_Weights.DEFAULT)
         for p in model.parameters():
@@ -58,6 +59,11 @@ def main():
         patience = 5
         best_val_loss = float('inf')
         trigger = 0
+
+        # Lists that store losses and accuracy
+        train_losses = []
+        val_losses = []
+        val_accuracies = []
 
         for epoch in range(epochs):
             model.train()
@@ -87,11 +93,15 @@ def main():
                     correct += (predicted == labels).sum().item()
             val_loss /= len(load2)
             accuracy = correct / total
+            # Save stats
+            train_losses.append(train_loss)
+            val_losses.append(val_loss)
+            val_accuracies.append(accuracy)
 
             print(f"Epoch {epoch+1}/{epochs}, Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Accuracy: {accuracy:.4f}")
 
             if epoch == 0 or val_loss < best_val_loss:
-                print(f"Saving model at epoch {epoch+1} for learning rate index {i}")
+               
                 best_val_loss = val_loss
                 trigger = 0
                 torch.save(model.state_dict(), f"model_{i}.pth")
@@ -101,6 +111,32 @@ def main():
                     print("Early stopping")
                     break
 
+         # Plot graphs
+        epochs_range = range(1, len(train_losses) + 1)
+        plt.figure(figsize=(12, 5))
+
+        # Accuracy Plot
+        plt.subplot(1, 2, 1)
+        plt.plot(epochs_range, val_accuracies, label="Validation Accuracy", color="red")
+        plt.title("Model Accuracy")
+        plt.xlabel("Epoch")
+        plt.ylabel("Accuracy")
+        plt.legend()
+
+        # Loss Plot
+        plt.subplot(1, 2, 2)
+        plt.plot(epochs_range, train_losses, label="Train Loss", color="blue")
+        plt.plot(epochs_range, val_losses, label="Validation Loss", color="orange")
+        plt.title("Model Loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.legend()
+
+        plt.suptitle(f"Learning Rate = {learning_rate}")
+        plt.tight_layout()
+        plt.savefig(f"metrics_lr_{learning_rate}.png")
+        plt.show()
+       
     # Choose which trained model index to test (e.g., 1 = 0.001)
     test_index = 1
     print(f"\nLoading model for testing (learning rate = {lr[test_index]})")
