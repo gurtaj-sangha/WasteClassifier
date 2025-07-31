@@ -1,10 +1,17 @@
+
 import torch 
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib.pyplot as plt
+# Data utils
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms, models
 from torchvision.models import ResNet50_Weights
+# Evaluation and metrics
+from sklearn.metrics import confusion_matrix
+import numpy as np
+# Plotting
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -147,6 +154,9 @@ def main():
     right = 0
     total = 0
     criterion = nn.CrossEntropyLoss()
+
+    all_preds = []
+    all_labels = []
     with torch.no_grad():
         for inputs, labels in load3:
             inputs, labels = inputs.to(device), labels.to(device)
@@ -156,9 +166,24 @@ def main():
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             right += (predicted == labels).sum().item()
+            # Store predictions and actual labels to use for confusion matrix later
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
     test_loss /= len(load3)
     acc = right / total
     print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {acc:.4f}")
+    # Confusion matrix
+    cm = confusion_matrix(all_labels, all_preds)
+    class_names = load3.dataset.dataset.classes  
+
+    plt.figure(figsize=(6, 5))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
+    plt.title("Confusion Matrix")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.tight_layout()
+    plt.savefig("confusion_matrix.png")
+    plt.close()
 
 # Required for Windows to safely run multiprocessing
 if __name__ == "__main__":
