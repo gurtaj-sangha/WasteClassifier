@@ -17,7 +17,7 @@ transform = transforms.Compose([
 def load_model():
     model = models.resnet50(pretrained=False)
     model.fc = nn.Linear(model.fc.in_features, 3)
-    model.load_state_dict(torch.load("pth-files/modelbest.pth", map_location=device))
+    model.load_state_dict(torch.load("model_1.pth", map_location=device))
     model = model.to(device)
     model.eval()
     return model
@@ -38,7 +38,7 @@ if uploaded_file:
         probabilities = F.softmax(output, dim=1)[0].cpu().numpy()
         _, pred = torch.max(output, 1)
     
-    class_names = ['Garbage', 'Compost', 'Recycle']
+    class_names = ['Compost', 'Garbage', 'Recycle']
     confidence = probabilities[pred.item()] * 100
     
     sl.markdown("### Our prediction is:")
